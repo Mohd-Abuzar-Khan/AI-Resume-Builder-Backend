@@ -1,0 +1,141 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:4200"
+            allowedMethods: 
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders: "*"
+            allowCredentials: true
+            exposedHeaders: "Authorization, Content-Type, X-User-Id"
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**
+
+        - id: auth-service-swagger
+          uri: lb://auth-service
+          predicates:
+            - Path=/auth-service/v3/api-docs/**
+          filters:
+            - RewritePath=/auth-service/(?<segment>.*), /${segment}
+
+        - id: template-service
+          uri: lb://template-service
+          predicates:
+            - Path=/api/v1/templates/**
+
+        - id: ai-service
+          uri: lb://ai-service
+          predicates:
+            - Path=/api/v1/ai/**
+
+        - id: export-service
+          uri: lb://export-service
+          predicates:
+            - Path=/api/v1/exports/**
+
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notifications/**
+
+        - id: job-match-service
+          uri: lb://job-match-service
+          predicates:
+            - Path=/api/v1/job-matches/**
+
+        - id: template-service-swagger
+          uri: lb://template-service
+          predicates:
+            - Path=/template-service/v3/api-docs/**
+          filters:
+            - RewritePath=/template-service/(?<segment>.*), /${segment}
+
+        - id: resume-service
+          uri: lb://resume-service
+          predicates:
+            - Path=/api/v1/resumes/**,/api/v1/sections/**
+
+        - id: resume-service-swagger
+          uri: lb://resume-service
+          predicates:
+            - Path=/resume-service/v3/api-docs/**
+          filters:
+            - RewritePath=/resume-service/(?<segment>.*), /${segment}
+
+        - id: ai-service-swagger
+          uri: lb://ai-service
+          predicates:
+            - Path=/ai-service/v3/api-docs/**
+          filters:
+            - RewritePath=/ai-service/(?<segment>.*), /${segment}
+
+        - id: export-service-swagger
+          uri: lb://export-service
+          predicates:
+            - Path=/export-service/v3/api-docs/**
+          filters:
+            - RewritePath=/export-service/(?<segment>.*), /${segment}
+
+        - id: notification-service-swagger
+          uri: lb://notification-service
+          predicates:
+            - Path=/notification-service/v3/api-docs/**
+          filters:
+            - RewritePath=/notification-service/(?<segment>.*), /${segment}
+
+        - id: job-match-service-swagger
+          uri: lb://job-match-service
+          predicates:
+            - Path=/job-match-service/v3/api-docs/**
+          filters:
+            - RewritePath=/job-match-service/(?<segment>.*), /${segment}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: 01. Auth Service
+        url: /auth-service/v3/api-docs
+      - name: 02. Resume Service
+        url: /resume-service/v3/api-docs
+      - name: 03. Template Service
+        url: /template-service/v3/api-docs
+      - name: 04. AI Service
+        url: /ai-service/v3/api-docs
+      - name: 05. Export Service
+        url: /export-service/v3/api-docs
+      - name: 06. Notification Service
+        url: /notification-service/v3/api-docs
+      - name: 07. Job Match Service
+        url: /job-match-service/v3/api-docs
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://127.0.0.1:8761/eureka}
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET:resumade-super-secret-key-that-is-at-least-256-bits-long-for-hs256}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
