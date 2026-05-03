@@ -16,6 +16,21 @@ Handles user authentication, registration, and security using JWT and Spring Sec
 ### 4. AI Service
 Provides AI-powered features such as resume generation, tailoring, and ATS analysis using Gemini AI.
 
+### 5. Resume Service
+Manages user resumes, sections, and personal data.
+
+### 6. Template Service
+Provides a collection of resume templates for users to choose from.
+
+### 7. Notification Service
+Handles email and system notifications using RabbitMQ and SMTP.
+
+### 8. Export Service
+Manages exporting resumes to PDF/JSON and storage in S3.
+
+### 9. Job Match Service
+Matches user resumes with real-time job listings using Jooble and Gemini AI.
+
 ## Technologies
 - Java 25
 - Spring Boot
