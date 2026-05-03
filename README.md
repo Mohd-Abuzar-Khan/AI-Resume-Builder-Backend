@@ -13,6 +13,9 @@ The entry point for all client requests, handling routing to the appropriate mic
 ### 3. Auth Service
 Handles user authentication, registration, and security using JWT and Spring Security.
 
+### 4. AI Service
+Provides AI-powered features such as resume generation, tailoring, and ATS analysis using Gemini AI.
+
 ## Technologies
 - Java 25
 - Spring Boot
