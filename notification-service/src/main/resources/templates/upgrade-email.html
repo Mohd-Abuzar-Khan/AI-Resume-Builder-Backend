@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .header { background: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%); padding: 50px 20px; text-align: center; color: white; }
+        .header h1 { margin: 0; font-size: 32px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .content { padding: 40px 30px; line-height: 1.7; color: #2c3e50; }
+        .content h2 { color: #e67e22; margin-top: 0; font-size: 24px; }
+        .premium-box { background: rgba(255, 215, 0, 0.1); border: 2px solid #FFD700; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center; }
+        .footer { background-color: #f8f9fa; padding: 30px; text-align: center; font-size: 13px; color: #95a5a6; border-top: 1px solid #edf2f7; }
+        .btn { display: inline-block; padding: 14px 35px; background: #e67e22; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PREMIUM UPGRADE</h1>
+        </div>
+        <div class="content">
+            <h2 th:text="${title}">Account Upgraded!</h2>
+            <p th:text="${message}">Your account has been successfully upgraded.</p>
+            <div class="premium-box">
+                <strong>Premium Benefits Activated:</strong>
+                <ul style="text-align: left; display: inline-block;">
+                    <li>Unlimited AI Resume Generations</li>
+                    <li>Full Access to All Templates</li>
+                    <li>Priority AI Support</li>
+
+                </ul>
+            </div>
+            <p>Thank you for choosing Resumade Premium. We're excited to help you take your career to the next level.</p>
+            <div style="text-align: center;">
+                <a href="http://localhost:4200/builder" class="btn">Start Creating Now</a>
+            </div>
+        </div>
+        <div class="footer">
+            &copy; 2026 Resumade AI - Premium Member Services<br>
+            You are receiving this because you upgraded your plan.
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+server:
+  port: 9094
+
+spring:
+  application:
+    name: ai-service
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:resumade_ai}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://127.0.0.1:8761/eureka}
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET:resumade-super-secret-key-that-is-at-least-256-bits-long-for-hs256}
+
+# AI Configurations
+ai:
+  gemini:
+    api-key: ${GEMINI_API_KEY}
+    model: gemini-2.5-flash
+    fallback-model: gemini-2.5-flash
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# Feature Flags
+features:
+  enforce-premium: ${ENFORCE_PREMIUM:false}

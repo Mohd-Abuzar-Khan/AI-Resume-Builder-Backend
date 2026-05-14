@@ -1,0 +1,155 @@
+package com.resumade.template.controller;
+
+import com.resumade.template.dto.TemplateRequest;
+import com.resumade.template.dto.TemplateResponse;
+import com.resumade.template.entity.Template;
+import com.resumade.template.service.TemplateService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class TemplateControllerTest {
+
+    @Mock
+    private TemplateService templateService;
+
+    @InjectMocks
+    private TemplateController templateController;
+
+    private TemplateResponse mockResponse;
+
+    @BeforeEach
+    void setUp() {
+        mockResponse = TemplateResponse.builder()
+                .templateId(1)
+                .name("Test Template")
+                .description("Desc")
+                .thumbnailUrl("url")
+                .htmlLayout("html")
+                .cssStyles("css")
+                .category(Template.Category.PROFESSIONAL)
+                .isPremium(false)
+                .isActive(true)
+                .build();
+    }
+
+    @Test
+    void getAllTemplates_shouldReturnList() {
+        when(templateService.getAllActiveTemplates()).thenReturn(Arrays.asList(mockResponse));
+        ResponseEntity<List<TemplateResponse>> response = templateController.getAllTemplates();
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().size());
+    }
+
+    @Test
+    void getFreeTemplates_shouldReturnList() {
+        when(templateService.getFreeTemplates()).thenReturn(Arrays.asList(mockResponse));
+        ResponseEntity<List<TemplateResponse>> response = templateController.getFreeTemplates();
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getPremiumTemplates_shouldReturnList() {
+        when(templateService.getPremiumTemplates()).thenReturn(Arrays.asList(mockResponse));
+        ResponseEntity<List<TemplateResponse>> response = templateController.getPremiumTemplates();
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getTemplatesByCategory_shouldReturnList() {
+        when(templateService.getTemplatesByCategory("PROFESSIONAL")).thenReturn(Arrays.asList(mockResponse));
+        ResponseEntity<List<TemplateResponse>> response = templateController.getTemplatesByCategory("PROFESSIONAL");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getPopularTemplates_shouldReturnList() {
+        when(templateService.getPopularTemplates()).thenReturn(Arrays.asList(mockResponse));
+        ResponseEntity<List<TemplateResponse>> response = templateController.getPopularTemplates();
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void getTemplateById_shouldReturnTemplate() {
+        when(templateService.getTemplateById(1)).thenReturn(mockResponse);
+        ResponseEntity<TemplateResponse> response = templateController.getTemplateById(1);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void incrementUsage_shouldReturnOk() {
+        ResponseEntity<Void> response = templateController.incrementUsage(1);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(templateService).incrementUsage(1);
+    }
+
+    @Test
+    void createTemplate_shouldReturnCreatedWhenAdmin() {
+        TemplateRequest request = new TemplateRequest();
+        when(templateService.createTemplate(any(), eq("ADMIN"))).thenReturn(mockResponse);
+        ResponseEntity<TemplateResponse> response = templateController.createTemplate("ADMIN", request);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+    }
+
+    @Test
+    void createTemplate_shouldThrowWhenNotAdmin() {
+        TemplateRequest request = new TemplateRequest();
+        when(templateService.createTemplate(any(), eq("USER")))
+                .thenThrow(new org.springframework.security.access.AccessDeniedException("Access Denied"));
+        org.junit.jupiter.api.Assertions.assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> {
+                    templateController.createTemplate("USER", request);
+                });
+    }
+
+    @Test
+    void updateTemplate_shouldReturnOkWhenAdmin() {
+        TemplateRequest request = new TemplateRequest();
+        when(templateService.updateTemplate(eq(1), any(), eq("ADMIN"))).thenReturn(mockResponse);
+        ResponseEntity<TemplateResponse> response = templateController.updateTemplate(1, "ADMIN", request);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    void updateTemplate_shouldThrowWhenNotAdmin() {
+        TemplateRequest request = new TemplateRequest();
+        when(templateService.updateTemplate(eq(1), any(), eq("USER")))
+                .thenThrow(new org.springframework.security.access.AccessDeniedException("Access Denied"));
+        org.junit.jupiter.api.Assertions.assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> {
+                    templateController.updateTemplate(1, "USER", request);
+                });
+    }
+
+    @Test
+    void deactivateTemplate_shouldReturnOkWhenAdmin() {
+        ResponseEntity<Void> response = templateController.deactivateTemplate(1, "ADMIN");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(templateService).deactivateTemplate(1, "ADMIN");
+    }
+
+    @Test
+    void deactivateTemplate_shouldThrowWhenNotAdmin() {
+        org.mockito.Mockito.doThrow(new org.springframework.security.access.AccessDeniedException("Access Denied"))
+                .when(templateService).deactivateTemplate(1, "USER");
+        org.junit.jupiter.api.Assertions.assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> {
+                    templateController.deactivateTemplate(1, "USER");
+                });
+    }
+}

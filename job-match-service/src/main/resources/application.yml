@@ -1,0 +1,42 @@
+server:
+  port: 9097
+
+spring:
+  application:
+    name: job-match-service
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:resumade_job_match}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://127.0.0.1:8761/eureka}
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET:resumade-super-secret-key-that-is-at-least-256-bits-long-for-hs256}
+
+jooble:
+  api-key: ${JOOBLE_API_KEY}
+
+ai:
+  gemini:
+    api-key: ${GEMINI_API_KEY}
+    model: gemini-2.5-flash
+
+services:
+  resume-url: http://resume-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
