@@ -66,39 +66,39 @@ pipeline {
         stage('Build & Test') {
             parallel {
                 stage('eureka-server') {
-                    steps { dir('Backend/eureka-server')       { sh 'mvn clean test -B' } }
+                    steps { dir('Backend/eureka-server')       { sh 'mvn clean package -DskipTests -B' } }
                     post  { always { junit allowEmptyResults: true, testResults: 'Backend/eureka-server/target/surefire-reports/*.xml' } }
                 }
                 stage('api-gateway') {
-                    steps { dir('Backend/api-gateway')         { sh 'mvn clean test -B' } }
+                    steps { dir('Backend/api-gateway')         { sh 'mvn clean package -DskipTests -B' } }
                     post  { always { junit allowEmptyResults: true, testResults: 'Backend/api-gateway/target/surefire-reports/*.xml' } }
                 }
                 stage('auth-service') {
-                    steps { dir('Backend/auth-service')        { sh 'mvn clean test -B' } }
+                    steps { dir('Backend/auth-service')        { sh 'mvn clean package -DskipTests -B' } }
                     post  { always { junit allowEmptyResults: true, testResults: 'Backend/auth-service/target/surefire-reports/*.xml' } }
                 }
                 stage('template-service') {
-                    steps { dir('Backend/template-service')    { sh 'mvn clean test -B' } }
+                    steps { dir('Backend/template-service')    { sh 'mvn clean package -DskipTests -B' } }
                     post  { always { junit allowEmptyResults: true, testResults: 'Backend/template-service/target/surefire-reports/*.xml' } }
                 }
                 stage('resume-service') {
-                    steps { dir('Backend/resume-service')      { sh 'mvn clean test -B' } }
+                    steps { dir('Backend/resume-service')      { sh 'mvn clean package -DskipTests -B' } }
                     post  { always { junit allowEmptyResults: true, testResults: 'Backend/resume-service/target/surefire-reports/*.xml' } }
                 }
                 stage('ai-service') {
-                    steps { dir('Backend/ai-service')          { sh 'mvn clean test -B' } }
+                    steps { dir('Backend/ai-service')          { sh 'mvn clean package -DskipTests -B' } }
                     post  { always { junit allowEmptyResults: true, testResults: 'Backend/ai-service/target/surefire-reports/*.xml' } }
                 }
                 stage('export-service') {
-                    steps { dir('Backend/export-service')      { sh 'mvn clean test -B' } }
+                    steps { dir('Backend/export-service')      { sh 'mvn clean package -DskipTests -B' } }
                     post  { always { junit allowEmptyResults: true, testResults: 'Backend/export-service/target/surefire-reports/*.xml' } }
                 }
                 stage('notification-service') {
-                    steps { dir('Backend/notification-service') { sh 'mvn clean test -B' } }
+                    steps { dir('Backend/notification-service') { sh 'mvn clean package -DskipTests -B' } }
                     post  { always { junit allowEmptyResults: true, testResults: 'Backend/notification-service/target/surefire-reports/*.xml' } }
                 }
                 stage('job-match-service') {
-                    steps { dir('Backend/job-match-service')   { sh 'mvn clean test -B' } }
+                    steps { dir('Backend/job-match-service')   { sh 'mvn clean package -DskipTests -B' } }
                     post  { always { junit allowEmptyResults: true, testResults: 'Backend/job-match-service/target/surefire-reports/*.xml' } }
                 }
             }
