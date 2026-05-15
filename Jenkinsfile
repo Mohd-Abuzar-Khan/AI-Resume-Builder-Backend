@@ -66,40 +66,40 @@ pipeline {
         stage('Build & Test') {
             parallel {
                 stage('eureka-server') {
-                    steps { dir('Backend/eureka-server')       { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'Backend/eureka-server/target/surefire-reports/*.xml' } }
+                    steps { dir('eureka-server')       { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'eureka-server/target/surefire-reports/*.xml' } }
                 }
                 stage('api-gateway') {
-                    steps { dir('Backend/api-gateway')         { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'Backend/api-gateway/target/surefire-reports/*.xml' } }
+                    steps { dir('api-gateway')         { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'api-gateway/target/surefire-reports/*.xml' } }
                 }
                 stage('auth-service') {
-                    steps { dir('Backend/auth-service')        { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'Backend/auth-service/target/surefire-reports/*.xml' } }
+                    steps { dir('auth-service')        { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'auth-service/target/surefire-reports/*.xml' } }
                 }
                 stage('template-service') {
-                    steps { dir('Backend/template-service')    { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'Backend/template-service/target/surefire-reports/*.xml' } }
+                    steps { dir('template-service')    { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'template-service/target/surefire-reports/*.xml' } }
                 }
                 stage('resume-service') {
-                    steps { dir('Backend/resume-service')      { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'Backend/resume-service/target/surefire-reports/*.xml' } }
+                    steps { dir('resume-service')      { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'resume-service/target/surefire-reports/*.xml' } }
                 }
                 stage('ai-service') {
-                    steps { dir('Backend/ai-service')          { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'Backend/ai-service/target/surefire-reports/*.xml' } }
+                    steps { dir('ai-service')          { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'ai-service/target/surefire-reports/*.xml' } }
                 }
                 stage('export-service') {
-                    steps { dir('Backend/export-service')      { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'Backend/export-service/target/surefire-reports/*.xml' } }
+                    steps { dir('export-service')      { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'export-service/target/surefire-reports/*.xml' } }
                 }
                 stage('notification-service') {
-                    steps { dir('Backend/notification-service') { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'Backend/notification-service/target/surefire-reports/*.xml' } }
+                    steps { dir('notification-service') { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'notification-service/target/surefire-reports/*.xml' } }
                 }
                 stage('job-match-service') {
-                    steps { dir('Backend/job-match-service')   { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'Backend/job-match-service/target/surefire-reports/*.xml' } }
+                    steps { dir('job-match-service')   { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'job-match-service/target/surefire-reports/*.xml' } }
                 }
             }
         }
@@ -115,7 +115,7 @@ pipeline {
                         'export-service', 'notification-service', 'job-match-service'
                     ]
                     services.each { svc ->
-                        dir("Backend/${svc}") {
+                        dir("${svc}") {
                             sh 'mvn package -DskipTests -B'
                         }
                     }
@@ -142,16 +142,9 @@ pipeline {
                             docker build \
                                 -t ${DOCKER_REGISTRY}/resumade-${svc}:${IMAGE_TAG} \
                                 -t ${DOCKER_REGISTRY}/resumade-${svc}:latest \
-                                ./Backend/${svc}
+                                ./${svc}
                         """
                     }
-                    // Frontend
-                    sh """
-                        docker build \
-                            -t ${DOCKER_REGISTRY}/resumade-frontend:${IMAGE_TAG} \
-                            -t ${DOCKER_REGISTRY}/resumade-frontend:latest \
-                            ./Frontend
-                    """
                 }
             }
         }
@@ -218,7 +211,6 @@ pipeline {
                         export MAIL_USER=$MAIL_USER
                         export MAIL_PASSWORD=$MAIL_PASSWORD
 
-                        cd Backend
                         docker-compose pull
                         docker-compose up -d --force-recreate --remove-orphans
                     '''
