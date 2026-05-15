@@ -88,7 +88,7 @@ public class Notification {
     public void setSentAt(LocalDateTime sentAt) { this.sentAt = sentAt; }
 
     public enum NotificationType {
-        ATS_COMPLETE, EXPORT_READY, AI_DONE, JOB_MATCH, PLAN_CHANGE, QUOTA_WARNING, SYSTEM
+        AUTH, ATS_COMPLETE, EXPORT_READY, AI_DONE, JOB_MATCH, PLAN_CHANGE, QUOTA_WARNING, SYSTEM
     }
 
     public enum NotificationChannel {

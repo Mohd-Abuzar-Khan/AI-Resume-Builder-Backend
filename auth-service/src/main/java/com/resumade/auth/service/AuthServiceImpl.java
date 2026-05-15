@@ -138,6 +138,20 @@ public class AuthServiceImpl implements AuthService {
         saveTokenToRedis(user.getEmail(), token);
 
         log.info("User logged in successfully: {}", user.getUserId());
+
+        // Send login notification
+        try {
+            notificationProducer.sendNotification(new NotificationEvent(
+                    user.getUserId(),
+                    user.getEmail(),
+                    "AUTH",
+                    "Security Alert: New Login",
+                    "A new login was detected for your Resumade account on " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + ". If this wasn't you, please change your password immediately.",
+                    "EMAIL"));
+        } catch (Exception e) {
+            log.error("Failed to send login notification: {}", e.getMessage());
+        }
+
         return buildAuthResponse(token, user);
     }
 
@@ -216,6 +230,20 @@ public class AuthServiceImpl implements AuthService {
             saveTokenToRedis(user.getEmail(), jwtToken);
 
             log.info("Google login successful for user: {}", user.getUserId());
+
+            // Send login notification
+            try {
+                notificationProducer.sendNotification(new NotificationEvent(
+                        user.getUserId(),
+                        user.getEmail(),
+                        "AUTH",
+                        "Security Alert: Google Login",
+                        "A new login via Google was detected for your Resumade account on " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + ".",
+                        "EMAIL"));
+            } catch (Exception e) {
+                log.error("Failed to send Google login notification: {}", e.getMessage());
+            }
+
             return buildAuthResponse(jwtToken, user);
 
         } catch (InvalidCredentialsException e) {
@@ -401,16 +429,17 @@ public class AuthServiceImpl implements AuthService {
         log.info("User deleted: {}", userId);
     }
 
-    // Generates a UUID reset token with 1-hour expiry and sends it via notification queue
+    // Generates a 6-digit OTP with 15-minute expiry and sends it via notification queue
     @Override
     @Transactional
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
-        String token = java.util.UUID.randomUUID().toString();
-        user.setResetToken(token);
-        user.setResetTokenExpiry(java.time.LocalDateTime.now().plusHours(1));
+        // Generate 6-digit OTP
+        String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+        user.setResetToken(otp);
+        user.setResetTokenExpiry(java.time.LocalDateTime.now().plusMinutes(15));
         userRepository.save(user);
 
         try {
@@ -418,8 +447,8 @@ public class AuthServiceImpl implements AuthService {
                     user.getUserId(),
                     user.getEmail(),
                     "AUTH",
-                    "Password Reset Request",
-                    "To reset your password, click the link: http://localhost:4200/reset-password?token=" + token,
+                    "Password Reset OTP",
+                    "Your OTP for password reset is: " + otp + ". It will expire in 15 minutes.",
                     "EMAIL"));
         } catch (Exception e) {
             log.error("Failed to send password reset email: {}", e.getMessage());
@@ -429,11 +458,15 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
-        User user = userRepository.findByResetToken(request.getToken())
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid or expired reset token"));
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + request.getEmail()));
+
+        if (user.getResetToken() == null || !user.getResetToken().equals(request.getToken())) {
+            throw new InvalidCredentialsException("Invalid reset token or OTP");
+        }
 
         if (user.getResetTokenExpiry().isBefore(java.time.LocalDateTime.now())) {
-            throw new InvalidCredentialsException("Reset token has expired");
+            throw new InvalidCredentialsException("Reset token or OTP has expired");
         }
 
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {

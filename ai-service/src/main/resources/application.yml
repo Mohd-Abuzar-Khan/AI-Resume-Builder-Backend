@@ -6,8 +6,8 @@ spring:
     name: ai-service
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:resumade_ai}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: ${DB_USER:root}
-    password: ${DB_PASSWORD:password}
+    username: ${DB_USER:Z4RY}
+    password: ${DB_PASSWORD:ABmysql14}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -26,12 +26,12 @@ eureka:
     prefer-ip-address: true
 
 jwt:
-  secret: ${JWT_SECRET:resumade-super-secret-key-that-is-at-least-256-bits-long-for-hs256}
+  secret: ${JWT_SECRET:GC0AnL4/4Xawm3eHaNxFgS6rt2tM2JoL37SK9VHtdtpXXavwOKvC+ai9FmwnCD36}
 
 # AI Configurations
 ai:
   gemini:
-    api-key: ${GEMINI_API_KEY}
+    api-key: ${GEMINI_API_KEY:AIzaSyBjuS0I1Tumf9pzJAgOAAd_7kelNDo1Cpo}
     model: gemini-2.5-flash
     fallback-model: gemini-2.5-flash
 
