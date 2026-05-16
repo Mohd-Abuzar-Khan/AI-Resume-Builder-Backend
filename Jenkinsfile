@@ -205,7 +205,7 @@ pipeline {
         stage('Smoke Test') {
             when { expression { env.GIT_BRANCH == 'origin/main' } }
             steps {
-                sh 'sleep 60'  // Wait for services to boot
+                sh 'sleep 90'  // Wait for services to boot (Eureka needs ~80s on 4GB)
                 sh 'curl -f http://localhost:8761/actuator/health || (echo "❌ Eureka is down!" && exit 1)'
                 sh 'curl -f http://localhost:9090/actuator/health || (echo "❌ API Gateway is down!" && exit 1)'
                 sh 'curl -f http://localhost:80 || (echo "❌ Frontend is down!" && exit 1)'
