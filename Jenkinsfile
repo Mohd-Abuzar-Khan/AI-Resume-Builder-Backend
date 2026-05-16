@@ -3,26 +3,18 @@ pipeline {
 
     // ─────────────────────────────────────────────────────────────
     // 1. ENVIRONMENT VARIABLES
-    //    All secrets come from Jenkins Credentials Store (never hard-coded).
+    //    Secrets are loaded from /var/jenkins_home/.env (persistent,
+    //    never committed to Git). Place .env on EC2 manually.
     //    DOCKER_REGISTRY is where your images will be pushed.
     //    IMAGE_TAG uses the Git commit SHA so every build is traceable.
     // ─────────────────────────────────────────────────────────────
     environment {
-        DOCKER_REGISTRY   = "your-dockerhub-username"           // ← change this to your Docker Hub username
+        DOCKER_REGISTRY   = "z4ry"
         IMAGE_TAG         = "${env.GIT_COMMIT?.take(7) ?: 'latest'}"
 
-        // Jenkins Credential IDs (configure these in Manage Jenkins → Credentials)
+        // Docker Hub credentials — from Jenkins vault (the only
+        // secret not in .env since it's a registry login)
         DOCKER_CREDENTIALS_ID  = "dockerhub-credentials"
-        DB_PASSWORD_ID         = "db-password"
-        GEMINI_API_KEY_ID      = "gemini-api-key"
-        JOOBLE_API_KEY_ID      = "jooble-api-key"
-        JWT_SECRET_ID          = "jwt-secret"
-        RAZORPAY_KEY_ID_CRED   = "razorpay-key-id"
-        RAZORPAY_SECRET_ID     = "razorpay-key-secret"
-        GOOGLE_CLIENT_ID_CRED  = "google-client-id"
-        GOOGLE_SECRET_ID       = "google-client-secret"
-        MAIL_USER_ID           = "mail-user"
-        MAIL_PASSWORD_ID       = "mail-password"
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -59,66 +51,78 @@ pipeline {
             }
         }
 
-        // ── STAGE 2: BUILD & UNIT TEST ───────────────────────────
-        // Each service is built with Maven in parallel.
-        // Tests run here so we catch failures early before wasting
-        // time on Docker builds.
-        stage('Build & Test') {
-            parallel {
-                stage('eureka-server') {
-                    steps { dir('eureka-server')       { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'eureka-server/target/surefire-reports/*.xml' } }
-                }
-                stage('api-gateway') {
-                    steps { dir('api-gateway')         { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'api-gateway/target/surefire-reports/*.xml' } }
-                }
-                stage('auth-service') {
-                    steps { dir('auth-service')        { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'auth-service/target/surefire-reports/*.xml' } }
-                }
-                stage('template-service') {
-                    steps { dir('template-service')    { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'template-service/target/surefire-reports/*.xml' } }
-                }
-                stage('resume-service') {
-                    steps { dir('resume-service')      { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'resume-service/target/surefire-reports/*.xml' } }
-                }
-                stage('ai-service') {
-                    steps { dir('ai-service')          { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'ai-service/target/surefire-reports/*.xml' } }
-                }
-                stage('export-service') {
-                    steps { dir('export-service')      { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'export-service/target/surefire-reports/*.xml' } }
-                }
-                stage('notification-service') {
-                    steps { dir('notification-service') { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'notification-service/target/surefire-reports/*.xml' } }
-                }
-                stage('job-match-service') {
-                    steps { dir('job-match-service')   { sh 'mvn clean package -DskipTests -B' } }
-                    post  { always { junit allowEmptyResults: true, testResults: 'job-match-service/target/surefire-reports/*.xml' } }
+        // ── STAGE 2: LOAD .env FILE ──────────────────────────────
+        // Reads KEY=VALUE pairs from /var/jenkins_home/.env (a
+        // persistent location outside the workspace — survives
+        // git cleans and workspace wipes). Place it on EC2 manually.
+        stage('Load Environment') {
+            steps {
+                script {
+                    def envFile = '/var/jenkins_home/.env'
+                    if (fileExists(envFile)) {
+                        echo "📄 Loading environment variables from ${envFile}..."
+                        def envContent = readFile(envFile).trim()
+                        envContent.split('\n').each { line ->
+                            line = line.trim()
+                            // Skip comments and blank lines
+                            if (line && !line.startsWith('#') && line.contains('=')) {
+                                def parts = line.split('=', 2)
+                                def key = parts[0].trim()
+                                def value = parts.length > 1 ? parts[1].trim() : ''
+                                if (key && value) {
+                                    env."${key}" = value
+                                }
+                            }
+                        }
+                        echo "✅ Environment loaded"
+                    } else {
+                        error "❌ .env not found at ${envFile}. SSH into EC2 and create it."
+                    }
                 }
             }
         }
 
-        // ── STAGE 3: PACKAGE JARs ────────────────────────────────
-        // Tests already passed above, so skip them here.
-        stage('Package JARs') {
-            steps {
-                script {
-                    def services = [
-                        'eureka-server', 'api-gateway', 'auth-service',
-                        'template-service', 'resume-service', 'ai-service',
-                        'export-service', 'notification-service', 'job-match-service'
-                    ]
-                    services.each { svc ->
-                        dir("${svc}") {
-                            sh 'mvn package -DskipTests -B'
-                        }
-                    }
+        // ── STAGE 3: BUILD & PACKAGE ─────────────────────────────
+        // Each service is built with Maven in parallel.
+        // mvn clean package already produces JARs, so there's no
+        // separate "Package JARs" stage needed.
+        stage('Build & Package') {
+            parallel {
+                stage('eureka-server') {
+                    steps { dir('eureka-server')        { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'eureka-server/target/surefire-reports/*.xml' } }
+                }
+                stage('api-gateway') {
+                    steps { dir('api-gateway')          { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'api-gateway/target/surefire-reports/*.xml' } }
+                }
+                stage('auth-service') {
+                    steps { dir('auth-service')         { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'auth-service/target/surefire-reports/*.xml' } }
+                }
+                stage('template-service') {
+                    steps { dir('template-service')     { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'template-service/target/surefire-reports/*.xml' } }
+                }
+                stage('resume-service') {
+                    steps { dir('resume-service')       { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'resume-service/target/surefire-reports/*.xml' } }
+                }
+                stage('ai-service') {
+                    steps { dir('ai-service')           { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'ai-service/target/surefire-reports/*.xml' } }
+                }
+                stage('export-service') {
+                    steps { dir('export-service')       { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'export-service/target/surefire-reports/*.xml' } }
+                }
+                stage('notification-service') {
+                    steps { dir('notification-service')  { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'notification-service/target/surefire-reports/*.xml' } }
+                }
+                stage('job-match-service') {
+                    steps { dir('job-match-service')    { sh 'mvn clean package -DskipTests -B' } }
+                    post  { always { junit allowEmptyResults: true, testResults: 'job-match-service/target/surefire-reports/*.xml' } }
                 }
             }
         }
@@ -131,7 +135,6 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    // Backend services
                     def services = [
                         'eureka-server', 'api-gateway', 'auth-service',
                         'template-service', 'resume-service', 'ai-service',
@@ -151,8 +154,10 @@ pipeline {
 
         // ── STAGE 5: PUSH DOCKER IMAGES ──────────────────────────
         // Push to Docker Hub. Only on main branch.
+        // Docker Hub credentials come from Jenkins vault (the only
+        // secret not in .env since it's a registry login).
         stage('Push Docker Images') {
-            when { branch 'main' }
+            when { expression { env.GIT_BRANCH == 'origin/main' } }
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: env.DOCKER_CREDENTIALS_ID,
@@ -164,8 +169,7 @@ pipeline {
                         def allImages = [
                             'eureka-server', 'api-gateway', 'auth-service',
                             'template-service', 'resume-service', 'ai-service',
-                            'export-service', 'notification-service', 'job-match-service',
-                            'frontend'
+                            'export-service', 'notification-service', 'job-match-service'
                         ]
                         allImages.each { svc ->
                             sh "docker push ${DOCKER_REGISTRY}/resumade-${svc}:${IMAGE_TAG}"
@@ -179,42 +183,19 @@ pipeline {
 
         // ── STAGE 6: DEPLOY ──────────────────────────────────────
         // Pull the freshly pushed images and restart the stack.
-        // Secrets are injected as environment variables via
-        // withCredentials — never written to disk.
+        // .env is read from /var/jenkins_home/.env (persistent on EC2).
         stage('Deploy') {
-            when { branch 'main' }
+            when { expression { env.GIT_BRANCH == 'origin/main' } }
             steps {
-                withCredentials([
-                    string(credentialsId: env.DB_PASSWORD_ID,        variable: 'DB_PASSWORD'),
-                    string(credentialsId: env.GEMINI_API_KEY_ID,     variable: 'GEMINI_API_KEY'),
-                    string(credentialsId: env.JOOBLE_API_KEY_ID,     variable: 'JOOBLE_API_KEY'),
-                    string(credentialsId: env.JWT_SECRET_ID,         variable: 'JWT_SECRET'),
-                    string(credentialsId: env.RAZORPAY_KEY_ID_CRED,  variable: 'RAZORPAY_KEY_ID'),
-                    string(credentialsId: env.RAZORPAY_SECRET_ID,    variable: 'RAZORPAY_KEY_SECRET'),
-                    string(credentialsId: env.GOOGLE_CLIENT_ID_CRED, variable: 'GOOGLE_CLIENT_ID'),
-                    string(credentialsId: env.GOOGLE_SECRET_ID,      variable: 'GOOGLE_CLIENT_SECRET'),
-                    string(credentialsId: env.MAIL_USER_ID,          variable: 'MAIL_USER'),
-                    string(credentialsId: env.MAIL_PASSWORD_ID,      variable: 'MAIL_PASSWORD')
-                ]) {
-                    sh '''
-                        export DB_USER=Z4RY
-                        export DB_PASSWORD=$DB_PASSWORD
-                        export GEMINI_API_KEY=$GEMINI_API_KEY
-                        export JOOBLE_API_KEY=$JOOBLE_API_KEY
-                        export JWT_SECRET=$JWT_SECRET
-                        export RAZORPAY_KEY_ID=$RAZORPAY_KEY_ID
-                        export RAZORPAY_KEY_SECRET=$RAZORPAY_KEY_SECRET
-                        export GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
-                        export GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
-                        export GOOGLE_REDIRECT_URI=http://localhost:4200/auth/google
-                        export MAIL_HOST=smtp.gmail.com
-                        export MAIL_USER=$MAIL_USER
-                        export MAIL_PASSWORD=$MAIL_PASSWORD
-
-                        docker-compose pull
-                        docker-compose up -d --force-recreate --remove-orphans
-                    '''
-                }
+                sh '''
+                    if [ ! -f docker-compose.yml ]; then
+                        echo "❌ docker-compose.yml not found in repo root!"
+                        exit 1
+                    fi
+                    echo "🚀 Deploying with docker-compose..."
+                    docker-compose --env-file /var/jenkins_home/.env pull
+                    docker-compose --env-file /var/jenkins_home/.env up -d --force-recreate --remove-orphans
+                '''
             }
         }
 
@@ -222,7 +203,7 @@ pipeline {
         // After deployment, verify the key entry points are actually
         // responding. A 60s sleep gives containers time to fully start up.
         stage('Smoke Test') {
-            when { branch 'main' }
+            when { expression { env.GIT_BRANCH == 'origin/main' } }
             steps {
                 sh 'sleep 60'  // Wait for services to boot
                 sh 'curl -f http://localhost:8761/actuator/health || (echo "❌ Eureka is down!" && exit 1)'
