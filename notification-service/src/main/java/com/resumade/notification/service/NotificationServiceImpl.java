@@ -37,7 +37,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final RestTemplate restTemplate;
     private final TemplateEngine templateEngine;
     private final NotificationService self;
-    @org.springframework.beans.factory.annotation.Value("${spring.mail.username:ananyashukla990@gmail.com}")
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username:absuzard@gmail.com}")
     private String mailFrom;
 
     public NotificationServiceImpl(NotificationRepository repository, JavaMailSender mailSender,

@@ -94,6 +94,7 @@ services:
         condition: service_started
     environment:
       - EUREKA_URL=http://eureka-server:8761/eureka
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx256m
     restart: always
 
@@ -120,6 +121,12 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - GEMINI_API_KEY=${GEMINI_API_KEY} # Not used by auth-service — only needed by ai-service and job-match
       - JOOBLE_API_KEY=${JOOBLE_API_KEY} # Not used by auth-service — only needed by job-match
+      - JWT_SECRET=${JWT_SECRET}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
       - JAVA_OPTS=-Xmx256m
     restart: always
 
@@ -138,6 +145,7 @@ services:
       - DB_HOST=mysql
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx256m
     restart: always
 
@@ -156,6 +164,7 @@ services:
       - DB_HOST=mysql
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx512m
     restart: always
 
@@ -175,6 +184,7 @@ services:
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx512m
     restart: always
 
@@ -196,6 +206,7 @@ services:
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
       - RABBITMQ_HOST=rabbitmq
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx256m
     restart: always
 
@@ -217,6 +228,10 @@ services:
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
       - RABBITMQ_HOST=rabbitmq
+      - JWT_SECRET=${JWT_SECRET}
+      - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
+      - MAIL_USER=${MAIL_USER}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
       - JAVA_OPTS=-Xmx256m
     restart: always
 
@@ -236,6 +251,7 @@ services:
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
       - JOOBLE_API_KEY=${JOOBLE_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx512m
     restart: always
 
