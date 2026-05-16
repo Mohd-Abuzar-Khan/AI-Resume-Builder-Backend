@@ -25,6 +25,7 @@ pipeline {
         DOCKER_REGISTRY       = "z4ry"
         IMAGE_TAG             = "${env.GIT_COMMIT?.take(7) ?: 'latest'}"
         DOCKER_CREDENTIALS_ID = "dockerhub-credentials"
+        DOCKER_BUILDKIT       = "1"
     }
 
     // ─────────────────────────────────────────────────────────────
