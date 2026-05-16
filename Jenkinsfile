@@ -123,7 +123,7 @@ pipeline {
                     services.each { svc ->
                         echo "🔨 Building ${svc}..."
                         sh """
-                            docker build \
+                            DOCKER_BUILDKIT=0 docker build \
                                 -t ${DOCKER_REGISTRY}/resumade-${svc}:${IMAGE_TAG} \
                                 -t ${DOCKER_REGISTRY}/resumade-${svc}:latest \
                                 ./${svc}
