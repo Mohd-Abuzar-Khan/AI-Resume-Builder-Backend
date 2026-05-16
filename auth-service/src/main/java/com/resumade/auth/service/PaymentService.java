@@ -91,6 +91,23 @@ public class PaymentService {
 
             authService.updateSubscription(record.getUserId(), "PREMIUM");
             log.info("Payment verified and subscription updated for user: {}", record.getUserId());
+
+            // Send payment success notification
+            try {
+                com.resumade.auth.entity.User user = userRepository.findById(record.getUserId()).orElse(null);
+                if (user != null) {
+                    notificationProducer.sendNotification(new com.resumade.auth.dto.NotificationEvent(
+                            user.getUserId(),
+                            user.getEmail(),
+                            "PAYMENT",
+                            "Payment Successful!",
+                            "Your payment of " + record.getCurrency() + " " + record.getAmount() + " was successful. Razorpay Payment ID: " + paymentId + ". Your account has been upgraded to PREMIUM.",
+                            "BOTH"
+                    ));
+                }
+            } catch (Exception e) {
+                log.error("Failed to send payment notification: {}", e.getMessage());
+            }
         }
     }
 

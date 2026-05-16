@@ -6,8 +6,8 @@ spring:
     name: notification-service
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:resumade_notifications}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: ${DB_USER:root}
-    password: ${DB_PASSWORD:password}
+    username: ${DB_USER:Z4RY}
+    password: ${DB_PASSWORD:ABmysql14}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -21,14 +21,15 @@ spring:
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: 587
-    username: ${MAIL_USER}
-    password: ${MAIL_PASSWORD}
+    username: ${MAIL_USER:ananyashukla990@gmail.com}
+    password: ${MAIL_PASSWORD:zjkzlyvfnuplswsi}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+            required: true
 
 eureka:
   client:
@@ -38,7 +39,7 @@ eureka:
     prefer-ip-address: true
 
 jwt:
-  secret: ${JWT_SECRET:resumade-super-secret-key-that-is-at-least-256-bits-long-for-hs256}
+  secret: ${JWT_SECRET:GC0AnL4/4Xawm3eHaNxFgS6rt2tM2JoL37SK9VHtdtpXXavwOKvC+ai9FmwnCD36}
 
 notification:
   queue: notification.queue
