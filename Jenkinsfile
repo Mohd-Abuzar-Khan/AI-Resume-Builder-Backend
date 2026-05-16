@@ -176,8 +176,11 @@ pipeline {
                         exit 1
                     fi
                     echo "🚀 Deploying with docker compose..."
-                    docker compose --env-file /var/jenkins_home/.env pull
-                    docker compose --env-file /var/jenkins_home/.env up -d --force-recreate --remove-orphans
+                    set -a
+                    source /var/jenkins_home/.env
+                    set +a
+                    docker compose pull
+                    docker compose up -d --force-recreate --remove-orphans
                 '''
             }
         }
