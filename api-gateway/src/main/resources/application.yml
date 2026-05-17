@@ -12,6 +12,7 @@ spring:
             allowedOrigins: 
               - "http://localhost:4200"
               - "http://localhost:9090"
+              - "https://ai-resume-builder-frontend-sandy.vercel.app"
             allowedMethods: 
               - GET
               - POST

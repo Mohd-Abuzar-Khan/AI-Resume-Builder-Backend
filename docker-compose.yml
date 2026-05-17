@@ -18,44 +18,7 @@ services:
       retries: 10
     restart: always
 
-  # --- Code Quality ---
-  sonarqube-db:
-    image: postgres:15
-    container_name: sonarqube-db
-    environment:
-      POSTGRES_USER: sonar
-      POSTGRES_PASSWORD: sonar
-      POSTGRES_DB: sonar
-    volumes:
-      - postgresql_data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "sonar" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: always
 
-  sonarqube:
-    image: sonarqube:9.9-community
-    container_name: sonarqube
-    ports:
-      - "9000:9000"
-    depends_on:
-      sonarqube-db:
-        condition: service_healthy
-    environment:
-      - SONAR_JDBC_URL=jdbc:postgresql://sonarqube-db:5432/sonar
-      - SONAR_JDBC_USERNAME=sonar
-      - SONAR_JDBC_PASSWORD=sonar
-    volumes:
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_extensions:/opt/sonarqube/extensions
-      - sonarqube_logs:/opt/sonarqube/logs
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-    restart: always
 
   redis:
     # No healthcheck — services may connect before Redis is ready
@@ -257,7 +220,3 @@ services:
 
 volumes:
   mysql_data:
-  postgresql_data:
-  sonarqube_data:
-  sonarqube_extensions:
-  sonarqube_logs:
