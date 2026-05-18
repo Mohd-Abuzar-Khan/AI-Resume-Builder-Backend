@@ -1,27 +1,27 @@
 services:
-  # --- Infrastructure (MySQL, Redis, RabbitMQ) ---
+
+  # ─── INFRASTRUCTURE ───────────────────────────────────────────
+
   mysql:
     image: mysql:8.0
     container_name: resumade-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-ABmysql14} # WARNING: Default credentials in plaintext — use secrets in production
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-ABmysql14}
+      MYSQL_DATABASE: resumade
       MYSQL_USER: ${DB_USER:-Z4RY}
       MYSQL_PASSWORD: ${DB_PASSWORD:-ABmysql14}
     ports:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./init-mysql.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-ABmysql14}" ]
+      interval: 10s
       timeout: 20s
       retries: 10
     restart: always
 
-
-
   redis:
-    # No healthcheck — services may connect before Redis is ready
     image: redis:alpine
     container_name: resumade-redis
     ports:
@@ -29,7 +29,6 @@ services:
     restart: always
 
   rabbitmq:
-    # No healthcheck — consumers may fail on first connection attempt
     image: rabbitmq:3-management-alpine
     container_name: resumade-rabbitmq
     ports:
@@ -37,9 +36,10 @@ services:
       - "15672:15672"
     restart: always
 
-  # --- Microservices ---
+  # ─── MICROSERVICES ────────────────────────────────────────────
+
   eureka-server:
-    build: ./eureka-server
+    image: z4ry/resumade-eureka-server:latest
     container_name: eureka-server
     ports:
       - "8761:8761"
@@ -48,21 +48,20 @@ services:
     restart: always
 
   api-gateway:
-    build: ./api-gateway
+    image: z4ry/resumade-api-gateway:latest
     container_name: api-gateway
     ports:
       - "9090:9090"
     depends_on:
-      eureka-server:
-        condition: service_started
+      - eureka-server
     environment:
       - EUREKA_URL=http://eureka-server:8761/eureka
-      - JWT_SECRET=${JWT_SECRET:-GC0AnL4/4Xawm3eHaNxFgS6rt2tM2JoL37SK9VHtdtpXXavwOKvC+ai9FmwnCD36}
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx256m
     restart: always
 
   auth-service:
-    build: ./auth-service
+    image: z4ry/resumade-auth-service:latest
     container_name: auth-service
     ports:
       - "9091:9091"
@@ -78,23 +77,23 @@ services:
     environment:
       - EUREKA_URL=http://eureka-server:8761/eureka
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=resumade
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
       - REDIS_HOST=redis
       - RABBITMQ_HOST=rabbitmq
-      - GEMINI_API_KEY=${GEMINI_API_KEY} # Not used by auth-service — only needed by ai-service and job-match
-      - JOOBLE_API_KEY=${JOOBLE_API_KEY:-074a6a76-e941-4810-ade7-5586cac14e21} # Not used by auth-service — only needed by job-match
-      - JWT_SECRET=${JWT_SECRET:-GC0AnL4/4Xawm3eHaNxFgS6rt2tM2JoL37SK9VHtdtpXXavwOKvC+ai9FmwnCD36}
-      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_Sg1DgGdgzA8yCx}
-      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-nwwfmI0rjKLMPl7JuupnaJu8}
+      - JWT_SECRET=${JWT_SECRET}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://54.79.134.135/auth/google}
+      - MAIL_USER=${MAIL_USER}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
       - JAVA_OPTS=-Xmx256m
     restart: always
 
   template-service:
-    build: ./template-service
+    image: z4ry/resumade-template-service:latest
     container_name: template-service
     ports:
       - "9092:9092"
@@ -106,14 +105,16 @@ services:
     environment:
       - EUREKA_URL=http://eureka-server:8761/eureka
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=resumade
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
-      - JWT_SECRET=${JWT_SECRET:-GC0AnL4/4Xawm3eHaNxFgS6rt2tM2JoL37SK9VHtdtpXXavwOKvC+ai9FmwnCD36}
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx256m
     restart: always
 
   resume-service:
-    build: ./resume-service
+    image: z4ry/resumade-resume-service:latest
     container_name: resume-service
     ports:
       - "9093:9093"
@@ -125,14 +126,16 @@ services:
     environment:
       - EUREKA_URL=http://eureka-server:8761/eureka
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=resumade
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
-      - JWT_SECRET=${JWT_SECRET:-GC0AnL4/4Xawm3eHaNxFgS6rt2tM2JoL37SK9VHtdtpXXavwOKvC+ai9FmwnCD36}
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx512m
     restart: always
 
   ai-service:
-    build: ./ai-service
+    image: z4ry/resumade-ai-service:latest
     container_name: ai-service
     ports:
       - "9094:9094"
@@ -144,15 +147,17 @@ services:
     environment:
       - EUREKA_URL=http://eureka-server:8761/eureka
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=resumade
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - JWT_SECRET=${JWT_SECRET:-GC0AnL4/4Xawm3eHaNxFgS6rt2tM2JoL37SK9VHtdtpXXavwOKvC+ai9FmwnCD36}
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx512m
     restart: always
 
   export-service:
-    build: ./export-service
+    image: z4ry/resumade-export-service:latest
     container_name: export-service
     ports:
       - "9095:9095"
@@ -166,15 +171,17 @@ services:
     environment:
       - EUREKA_URL=http://eureka-server:8761/eureka
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=resumade
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
       - RABBITMQ_HOST=rabbitmq
-      - JWT_SECRET=${JWT_SECRET:-GC0AnL4/4Xawm3eHaNxFgS6rt2tM2JoL37SK9VHtdtpXXavwOKvC+ai9FmwnCD36}
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx256m
     restart: always
 
   notification-service:
-    build: ./notification-service
+    image: z4ry/resumade-notification-service:latest
     container_name: notification-service
     ports:
       - "9096:9096"
@@ -188,18 +195,19 @@ services:
     environment:
       - EUREKA_URL=http://eureka-server:8761/eureka
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=resumade
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
       - RABBITMQ_HOST=rabbitmq
-      - JWT_SECRET=${JWT_SECRET:-GC0AnL4/4Xawm3eHaNxFgS6rt2tM2JoL37SK9VHtdtpXXavwOKvC+ai9FmwnCD36}
-      - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
       - MAIL_USER=${MAIL_USER}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx256m
     restart: always
 
   job-match-service:
-    build: ./job-match-service
+    image: z4ry/resumade-job-match-service:latest
     container_name: job-match-service
     ports:
       - "9097:9097"
@@ -211,10 +219,12 @@ services:
     environment:
       - EUREKA_URL=http://eureka-server:8761/eureka
       - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=resumade
       - DB_USER=${DB_USER:-Z4RY}
       - DB_PASSWORD=${DB_PASSWORD:-ABmysql14}
-      - JOOBLE_API_KEY=${JOOBLE_API_KEY:-074a6a76-e941-4810-ade7-5586cac14e21}
-      - JWT_SECRET=${JWT_SECRET:-GC0AnL4/4Xawm3eHaNxFgS6rt2tM2JoL37SK9VHtdtpXXavwOKvC+ai9FmwnCD36}
+      - JOOBLE_API_KEY=${JOOBLE_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
       - JAVA_OPTS=-Xmx512m
     restart: always
 
