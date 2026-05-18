@@ -169,19 +169,21 @@ pipeline {
         // ── STAGE 6: DEPLOY ──────────────────────────────────────
         // Pull images from Docker Hub and restart the full stack.
         stage('Deploy') {
-            when { expression { env.GIT_BRANCH == 'origin/main' } }
             steps {
                 sh '''
                     if [ ! -f docker-compose.yml ]; then
-                        echo "❌ docker-compose.yml not found in repo root!"
-                        exit 1
+                      echo "docker-compose.yml not found!"
+                      exit 1
                     fi
+
                     echo "🚀 Deploying with docker compose..."
+
                     set -a
-                    source /var/jenkins_home/.env
+                    . /var/jenkins_home/.env
                     set +a
-                    docker compose pull
-                    docker compose up -d --force-recreate --remove-orphans
+
+                    docker compose down
+                    docker compose up -d
                 '''
             }
         }
