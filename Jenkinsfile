@@ -183,8 +183,8 @@ pipeline {
                     . /var/jenkins_home/.env
                     set +a
 
-                    docker compose down
-                    docker compose up -d
+                    docker-compose down
+                    docker-compose up -d
                 '''
             }
         }
@@ -217,7 +217,7 @@ pipeline {
         failure {
             echo "❌ Pipeline FAILED — Build #${env.BUILD_NUMBER}. Check logs above."
             // Fixed: --tail flag not supported on older Docker versions
-            sh 'docker compose logs 2>/dev/null | tail -50 || true'
+            sh 'docker-compose logs 2>/dev/null | tail -50 || true'
         }
         unstable {
             echo "⚠️ Pipeline UNSTABLE — some tests may have failed."
