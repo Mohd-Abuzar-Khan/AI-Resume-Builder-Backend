@@ -7,11 +7,14 @@ spring:
   cloud:
     gateway:
       globalcors:
+        add-to-simple-url-handler-mapping: true
         corsConfigurations:
           '[/**]':
-            allowedOrigins: 
+            allowedOriginPatterns:
               - "http://localhost:4200"
               - "http://localhost:9090"
+              - "https://ai-resume-builder-frontend-sandy.vercel.app"
+              - "https://*.vercel.app"
             allowedMethods: 
               - GET
               - POST
@@ -136,7 +139,7 @@ eureka:
     prefer-ip-address: true
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:GC0AnL4/4Xawm3eHaNxFgS6rt2tM2JoL37SK9VHtdtpXXavwOKvC+ai9FmwnCD36}
 
 management:
   endpoints:

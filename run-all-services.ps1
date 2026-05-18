@@ -24,24 +24,32 @@ Write-Host "Checking Docker dependencies..." -ForegroundColor Yellow
 if (Get-Command "docker" -ErrorAction SilentlyContinue) {
     Write-Host "Starting MySQL, Redis, RabbitMQ, and SonarQube via Docker Compose..." -ForegroundColor Gray
     docker compose up -d mysql redis rabbitmq sonarqube
-} else {
+}
+else {
     Write-Warning "Docker not found. Please ensure Redis and RabbitMQ are running manually."
 }
 
-# Environment Variables (Load from .env file if it exists)
+# Load Environment Variables from .env
 if (Test-Path ".env") {
-    Write-Host "Loading environment variables from .env file..." -ForegroundColor Gray
-    Get-Content ".env" | Where-Object { $_ -match "=" -and -not $_.StartsWith("#") } | ForEach-Object {
-        $name, $value = $_.Split('=', 2)
-        Set-Item -Path "env:$($name.Trim())" -Value $value.Trim()
+    Write-Host "Loading environment variables from .env..." -ForegroundColor Gray
+    Get-Content ".env" | Where-Object { $_ -match "=" -and $_ -notmatch "^#" } | ForEach-Object {
+        $parts = $_.Split('=', 2)
+        if ($parts.Count -eq 2) {
+            $name = $parts[0].Trim()
+            $value = $parts[1].Trim()
+            if ($name -and $value) {
+                Set-Content "env:$name" $value
+            }
+        }
     }
-} else {
-    Write-Warning ".env file not found. Falling back to default values."
+}
+else {
+    Write-Warning ".env file not found. Using system environment variables."
 }
 
 # Memory limits (using MAVEN_OPTS avoids all quoting issues with Start-Process)
 $defaultMem = "-Xmx256m -Xms128m"
-$heavyMem   = "-Xmx512m -Xms256m"
+$heavyMem = "-Xmx512m -Xms256m"
 
 # 1. Start Eureka Server first
 Write-Host "Starting Eureka Server..." -ForegroundColor Yellow
@@ -60,14 +68,16 @@ while (-not $eurekaReady -and $elapsed -lt $timeout) {
             $eurekaReady = $true
             $connection.Close()
         }
-    } catch {
+    }
+    catch {
         Start-Sleep -Seconds 2
         $elapsed += 2
     }
 }
 if (-not $eurekaReady) {
     Write-Warning "Eureka Server didn't start in time. Proceeding anyway..."
-} else {
+}
+else {
     Write-Host "Eureka Server is UP!" -ForegroundColor Green
 }
 

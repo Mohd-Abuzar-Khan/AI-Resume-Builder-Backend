@@ -37,6 +37,8 @@ public class NotificationServiceImpl implements NotificationService {
     private final RestTemplate restTemplate;
     private final TemplateEngine templateEngine;
     private final NotificationService self;
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username:absuzard@gmail.com}")
+    private String mailFrom;
 
     public NotificationServiceImpl(NotificationRepository repository, JavaMailSender mailSender,
             RestTemplate restTemplate, TemplateEngine templateEngine,
@@ -181,10 +183,12 @@ public class NotificationServiceImpl implements NotificationService {
 
         if (title.contains("Welcome")) {
             templateName = "welcome-email";
-        } else if (title.contains("Plan Upgraded")) {
+        } else if (title.contains("Plan Upgraded") || title.contains("Payment Successful")) {
             templateName = "upgrade-email";
         } else if (title.contains("Password Reset")) {
             templateName = "reset-password-email";
+        } else if (title.contains("Security Alert")) {
+            templateName = "generic-notification"; // Could use a specific security template if created
         }
 
         sendHtmlEmail(to, title, templateName, variables);
@@ -202,7 +206,7 @@ public class NotificationServiceImpl implements NotificationService {
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlContent, true);
-            helper.setFrom("Resumade <noreply@resumade.com>");
+            helper.setFrom("Resumade <" + mailFrom + ">");
 
             mailSender.send(message);
             log.info("HTML Email sent to {} using template {}", to, templateName);
