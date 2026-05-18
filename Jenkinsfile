@@ -179,6 +179,7 @@ pipeline {
                     echo "🚀 Deploying with docker compose..."
 
                     set -a
+                    # NOTE: Values containing spaces (like MAIL_PASSWORD) must be double-quoted in .env to prevent shell sourcing errors.
                     . /var/jenkins_home/.env
                     set +a
 
