@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     // ─────────────────────────────────────────────────────────────
     // 1. ENVIRONMENT VARIABLES
     //    Secrets are loaded from /var/jenkins_home/.env (persistent,
